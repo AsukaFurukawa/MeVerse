@@ -1,0 +1,14 @@
+[
+  {
+    "email": "admin@meverse.io",
+    "username": "meverse_admin",
+    "full_name": "MeVerse Administrator",
+    "is_active": true,
+    "is_admin": true,
+    "id": "e616764e-a945-481f-b2bf-3ce39065df6e",
+    "hashed_password": "$2b$12$lcOLKVFB1Yy7tTMcyEcmcOMR.e800YCQgKTGqD2lbwHlg/xjiymbK",
+    "created_at": "2025-05-04T04:56:05.663988",
+    "last_login": null,
+    "data_sources": []
+  }
+]

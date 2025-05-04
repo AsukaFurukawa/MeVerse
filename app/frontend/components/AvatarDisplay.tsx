@@ -44,8 +44,8 @@ import {
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 
 // Motion components
-const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
+const MotionBox = motion.div;
+const MotionFlex = motion.div;
 
 // This is a placeholder for the avatar customization component
 // In a real implementation, you would integrate with a 3D model library or use SVG/Canvas
@@ -102,6 +102,9 @@ export default function AvatarDisplay({
     lg: { width: '300px', height: '300px' },
     xl: { width: '400px', height: '400px' },
   };
+  
+  // Ensure size is valid or fallback to 'md'
+  const validSize = (size && size in sizeMap) ? size : 'md';
   
   // Mood-based expressions
   const moodExpressions: Record<string, string> = {
@@ -291,12 +294,12 @@ export default function AvatarDisplay({
           }}
         >
           <Box 
-            width={sizeMap[size].width} 
-            height={sizeMap[size].height} 
+            width={sizeMap[validSize].width} 
+            height={sizeMap[validSize].height} 
             borderRadius="full" 
             bg={colors.skin} 
             position="relative"
-            boxShadow={colorMode === 'dark' ? 'glow' : 'card'}
+            style={{ boxShadow: colorMode === 'dark' ? 'glow' : 'card' }}
             display="flex"
             alignItems="center"
             justifyContent="center"
@@ -308,14 +311,16 @@ export default function AvatarDisplay({
             <AnimatePresence>
               <MotionBox
                 key={customization.hairStyle + customization.hairColor}
-                position="absolute"
-                top="-10%"
-                left="15%"
-                right="15%"
-                height="40%"
-                bg={colors.hair}
-                borderRadius="100% 100% 0 0"
-                display={customization.hairStyle === 'none' ? 'none' : 'block'}
+                style={{
+                  position: 'absolute',
+                  top: '-10%',
+                  left: '15%',
+                  right: '15%',
+                  height: '40%',
+                  background: colors.hair,
+                  borderRadius: '100% 100% 0 0',
+                  display: customization.hairStyle === 'none' ? 'none' : 'block'
+                }}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
@@ -325,9 +330,11 @@ export default function AvatarDisplay({
             
             {/* Face */}
             <MotionFlex
-              fontSize={size === 'sm' ? '2xl' : size === 'md' ? '4xl' : '6xl'}
-              alignItems="center"
-              justifyContent="center"
+              style={{
+                fontSize: validSize === 'sm' ? '2xl' : validSize === 'md' ? '4xl' : '6xl',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
               animate={{
                 scale: blinkTrigger ? 0.8 : 1,
                 transition: { duration: 0.2 }
@@ -340,12 +347,14 @@ export default function AvatarDisplay({
             <AnimatePresence>
               {customization.accessory === 'hat' && (
                 <MotionBox
-                  position="absolute"
-                  top="-20%"
-                  width="60%"
-                  height="30%"
-                  bg="accent.purple"
-                  borderRadius="100% 100% 0 0"
+                  style={{
+                    position: 'absolute',
+                    top: '-20%',
+                    width: '60%',
+                    height: '30%',
+                    background: 'accent.purple',
+                    borderRadius: '100% 100% 0 0'
+                  }}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -355,9 +364,11 @@ export default function AvatarDisplay({
               
               {customization.accessory === 'glasses' && (
                 <MotionBox
-                  position="absolute"
-                  width="70%"
-                  height="15%"
+                  style={{
+                    position: 'absolute',
+                    width: '70%',
+                    height: '15%'
+                  }}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0 }}
@@ -373,10 +384,12 @@ export default function AvatarDisplay({
               
               {customization.accessory === 'headphones' && (
                 <MotionBox
-                  position="absolute"
-                  top="-10%"
-                  width="100%"
-                  height="30%"
+                  style={{
+                    position: 'absolute',
+                    top: '-10%',
+                    width: '100%',
+                    height: '30%'
+                  }}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
@@ -390,10 +403,13 @@ export default function AvatarDisplay({
               
               {customization.accessory === 'earrings' && (
                 <MotionFlex
-                  position="absolute"
-                  width="100%"
-                  justifyContent="space-between"
-                  px="15%"
+                  style={{
+                    position: 'absolute',
+                    width: '100%',
+                    justifyContent: 'space-between',
+                    paddingLeft: '15%',
+                    paddingRight: '15%'
+                  }}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0 }}
@@ -409,22 +425,22 @@ export default function AvatarDisplay({
             <AnimatePresence>
               <MotionBox
                 key={customization.outfit}
-                position="absolute"
-                bottom="0"
-                left="0"
-                right="0"
-                height="15%"
+                style={{
+                  position: 'absolute',
+                  bottom: '0',
+                  left: '0',
+                  right: '0',
+                  height: '15%',
+                  background: customization.outfit === 'casual' ? 'accent.blue' :
+                             customization.outfit === 'formal' ? 'gray.700' :
+                             customization.outfit === 'sporty' ? 'accent.green' :
+                             customization.outfit === 'professional' ? 'blue.700' :
+                             'accent.pink' // creative
+                }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                bg={
-                  customization.outfit === 'casual' ? 'accent.blue' :
-                  customization.outfit === 'formal' ? 'gray.700' :
-                  customization.outfit === 'sporty' ? 'accent.green' :
-                  customization.outfit === 'professional' ? 'blue.700' :
-                  'accent.pink' // creative
-                }
               />
             </AnimatePresence>
           </Box>
@@ -570,20 +586,19 @@ export default function AvatarDisplay({
                         ].map((outfit) => (
                           <MotionBox
                             key={outfit.value}
-                            p={3}
-                            borderRadius="md"
-                            bg={customization.outfit === outfit.value ? 
-                              `accent.${outfit.color}25` : 
-                              colorMode === 'dark' ? 'dark.200' : 'gray.50'
-                            }
-                            cursor="pointer"
+                            style={{
+                              padding: '12px',
+                              borderRadius: 'md',
+                              background: customization.outfit === outfit.value ? 
+                                `accent.${outfit.color}25` : 
+                                colorMode === 'dark' ? 'dark.200' : 'gray.50',
+                              cursor: 'pointer',
+                              border: '1px solid',
+                              borderColor: customization.outfit === outfit.value ? 
+                                `accent.${outfit.color}` : 
+                                colorMode === 'dark' ? 'dark.300' : 'gray.200'
+                            }}
                             onClick={() => handleCustomizationChange('outfit', outfit.value)}
-                            border="1px solid"
-                            borderColor={customization.outfit === outfit.value ? 
-                              `accent.${outfit.color}` : 
-                              colorMode === 'dark' ? 'dark.300' : 'gray.200'
-                            }
-                            _hover={{ borderColor: `accent.${outfit.color}` }}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.98 }}
                             transition={{ duration: 0.2 }}
@@ -618,20 +633,19 @@ export default function AvatarDisplay({
                         ].map((accessory) => (
                           <MotionBox
                             key={accessory.value}
-                            p={3}
-                            borderRadius="md"
-                            bg={customization.accessory === accessory.value ? 
-                              'brand.50' : 
-                              colorMode === 'dark' ? 'dark.200' : 'gray.50'
-                            }
-                            cursor="pointer"
+                            style={{
+                              padding: '12px',
+                              borderRadius: 'md',
+                              background: customization.accessory === accessory.value ? 
+                                'brand.50' : 
+                                colorMode === 'dark' ? 'dark.200' : 'gray.50',
+                              cursor: 'pointer',
+                              border: '1px solid',
+                              borderColor: customization.accessory === accessory.value ? 
+                                'brand.300' : 
+                                colorMode === 'dark' ? 'dark.300' : 'gray.200'
+                            }}
                             onClick={() => handleCustomizationChange('accessory', accessory.value)}
-                            border="1px solid"
-                            borderColor={customization.accessory === accessory.value ? 
-                              'brand.300' : 
-                              colorMode === 'dark' ? 'dark.300' : 'gray.200'
-                            }
-                            _hover={{ borderColor: 'brand.300' }}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.98 }}
                             transition={{ duration: 0.2 }}

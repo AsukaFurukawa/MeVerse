@@ -1,0 +1,7 @@
+<!-- This will create a new file. Since favicon.ico is a binary file, I'll instead create a text file explaining what needs to be done -->
+To resolve the favicon.ico 404 error:
+
+1. Download a favicon.ico file
+2. Place it in this directory (public folder)
+
+For now, please use any standard favicon.ico file or generate one from your logo. 

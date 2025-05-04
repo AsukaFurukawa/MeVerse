@@ -6,6 +6,8 @@ import { Global, css } from '@emotion/react';
 import Head from 'next/head';
 import { useState, useEffect } from 'react';
 import Loader from '../components/Loader';
+import { AuthProvider } from '../context/AuthContext';
+import Layout from '../components/Layout';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -46,6 +48,24 @@ const GlobalStyles = css`
     to { transform: translateY(0); opacity: 1; }
   }
   
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 0.6; }
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+  
+  @keyframes glow {
+    0% { box-shadow: 0 0 5px rgba(106, 38, 255, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(106, 38, 255, 0.6); }
+    100% { box-shadow: 0 0 5px rgba(106, 38, 255, 0.3); }
+  }
+  
   .cursor-follower {
     width: 20px;
     height: 20px;
@@ -54,8 +74,54 @@ const GlobalStyles = css`
     position: fixed;
     pointer-events: none;
     z-index: 9999;
-    transition: transform 0.1s ease;
+    transition: transform 0.15s ease-out;
     mix-blend-mode: difference;
+    backdrop-filter: invert(1);
+  }
+  
+  .floating-element {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  .glowing-element {
+    animation: glow 3s ease-in-out infinite;
+  }
+  
+  .pulsing-element {
+    animation: pulse 3s ease-in-out infinite;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(106, 38, 255, 0.3);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(106, 38, 255, 0.5);
+  }
+  
+  /* Button and interactive element hover effects */
+  button, a, .interactive-element {
+    transition: all 0.2s ease-out !important;
+  }
+  
+  button:hover, a:hover, .interactive-element:hover {
+    transform: translateY(-2px);
+  }
+  
+  button:active, a:active, .interactive-element:active {
+    transform: translateY(1px);
   }
 `;
 
@@ -94,14 +160,24 @@ const theme = extendTheme({
   },
   shadows: {
     glow: '0 0 15px rgba(106, 38, 255, 0.5)',
+    cardHover: '0 10px 40px rgba(0, 0, 0, 0.2)',
     card: '0 8px 30px rgba(0, 0, 0, 0.12)',
-    neon: '0 0 5px #6a26ff, 0 0 20px rgba(106, 38, 255, 0.5)'
+    neon: '0 0 5px #6a26ff, 0 0 20px rgba(106, 38, 255, 0.5)',
+    subtle: '0 4px 12px rgba(0, 0, 0, 0.08)'
   },
   styles: {
     global: (props: any) => ({
       body: {
         bg: props.colorMode === 'dark' ? 'dark.200' : 'gray.50',
         color: props.colorMode === 'dark' ? 'white' : 'gray.800',
+        lineHeight: 1.6,
+        letterSpacing: '-0.01em',
+      },
+      h1: {
+        letterSpacing: '-0.02em',
+      },
+      h2: {
+        letterSpacing: '-0.01em',
       }
     }),
   },
@@ -148,37 +224,99 @@ const theme = extendTheme({
       baseStyle: {
         fontWeight: '600',
       }
+    },
+    // Custom components styling
+    Card: {
+      baseStyle: (props: any) => ({
+        p: 6,
+        borderRadius: 'xl',
+        bg: props.colorMode === 'dark' ? 'dark.100' : 'white',
+        boxShadow: 'card',
+        transition: 'all 0.3s ease',
+        _hover: {
+          boxShadow: 'cardHover',
+          transform: 'translateY(-5px)',
+        }
+      }),
+    },
+    Tag: {
+      baseStyle: {
+        borderRadius: 'full',
+      }
+    },
+    Tabs: {
+      variants: {
+        'soft-rounded': (props: any) => ({
+          tab: {
+            fontWeight: 'medium',
+            transition: 'all 0.2s',
+            _selected: {
+              fontWeight: 'semibold',
+            }
+          }
+        })
+      }
+    },
+    Modal: {
+      baseStyle: (props: any) => ({
+        dialog: {
+          bg: props.colorMode === 'dark' ? 'dark.100' : 'white',
+          boxShadow: 'card',
+          borderRadius: 'xl',
+        }
+      })
+    },
+    Tooltip: {
+      baseStyle: {
+        bg: 'brand.500',
+        color: 'white',
+        fontSize: 'xs',
+        borderRadius: 'md',
+        px: 2,
+        py: 1,
+      }
     }
   }
 });
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const [loading, setLoading] = useState(true);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    // Simulate initial loading for demo purposes
+    // Simulate initial loading
     const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2500);
-    
+      setIsLoading(false);
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
-  
+
   return (
-    <QueryClientProvider client={queryClient}>
+    <>
+      <Head>
+        <title>MeVerse - Your Digital Twin</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="MeVerse is your personal digital twin that learns and grows with you" />
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
+      
+      <Global styles={GlobalStyles} />
+      
       <ChakraProvider theme={theme}>
-        <Head>
-          <title>MeVerse | Your Digital Twin</title>
-          <meta name="description" content="MeVerse - A digital twin that learns from your behavior and provides guidance" />
-          <link rel="icon" href="/favicon.ico" />
-        </Head>
-        <Global styles={GlobalStyles} />
-        <Loader isLoading={loading} onLoadingComplete={() => setLoading(false)} />
-        {!loading && <Component {...pageProps} />}
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            {isLoading ? (
+              <Loader />
+            ) : (
+              <Layout>
+                <Component {...pageProps} />
+              </Layout>
+            )}
+          </AuthProvider>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
       </ChakraProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </>
   );
 }
 
-export default MyApp; 
+export default MyApp;

@@ -1,47 +1,118 @@
-# MeVerse: Your Digital Twin
+# MeVerse - Your Digital Twin
 
-MeVerse is a personalized AI that learns from your behavior, habits, moods, and preferences to predict how you would respond in different scenarios and provide guidance on decisions.
+MeVerse is a personalized AI application that learns from your behavior to provide guidance. The application consists of a FastAPI backend and a Next.js/React frontend with ChakraUI components.
 
 ## Features
 
-### 1. Data Ingestion Module
-- Tracks daily habits, journal entries, calendar events, mood logs
-- Integrations with various APIs (Google Calendar, GitHub, etc.)
+- **Growth Tracker**: Monitor your personal development and patterns
+- **Future Simulation**: Predict possible outcomes based on your data
+- **Personality Engine**: Understand your traits, behaviors, and tendencies
+- **Data Ingestion**: Connect your digital life to improve your MeVerse experience
+- **Journal**: Keep track of your thoughts, ideas, and personal narratives
 
-### 2. AI Personality Engine
-- Builds a profile based on your data
-- Uses machine learning to understand your decision patterns
-- Fine-tunes language models to match your communication style
+## Running the Application
 
-### 3. Future Simulation Engine
-- "What if" scenarios to predict outcomes of potential decisions
-- Generates optimal paths for personal and professional growth
+### Prerequisites
 
-### 4. Conversational Interface
-- Natural language interaction with your digital twin
-- Responses based on your personality profile and historical data
+- Node.js (v14 or higher)
+- npm or yarn
+- Python 3.8+ (for the backend)
 
-### 5. Growth Tracker
-- Visualizes your evolution over time
-- Predicts future trajectories based on current patterns
+### Starting the Frontend (Windows)
 
-## Getting Started
+#### Option 1: Using the Batch file (Recommended for Windows users)
 
-1. Install dependencies:
+```batch
+# Simply double-click the startup.bat file in File Explorer
+# Or run it from Command Prompt:
+cd path\to\MeVerse
+startup.bat
+```
+
+#### Option 2: Using PowerShell
+
+```powershell
+# Navigate to the MeVerse directory
+cd path\to\MeVerse
+
+# Run the startup script
+.\startup.ps1
+```
+
+#### Option 3: Manually
+
+```powershell
+# Navigate to the frontend directory
+cd path\to\MeVerse\app\frontend
+
+# Install dependencies (first time only)
+npm install
+
+# Start the development server
+npm run dev
+```
+
+The application will be available at http://localhost:3000
+
+### Starting the Backend
+
+```bash
+# Navigate to the backend directory
+cd path/to/MeVerse/app/backend
+
+# Install dependencies (first time only)
+pip install -r requirements.txt
+
+# Start the FastAPI server
+uvicorn main:app --reload
+```
+
+The API will be available at http://localhost:8000
+
+## Project Structure
+
+- `/app/frontend` - Next.js React frontend
+  - `/pages` - Main application pages
+  - `/components` - Reusable UI components
+  - `/styles` - Global CSS and theme settings
+  - `/public` - Static assets like images and favicon
+- `/app/backend` - FastAPI Python backend
+- `/design` - Design assets and mockups
+
+## Available Endpoints
+
+- `/` - Landing page
+- `/dashboard` - Main dashboard with overview of all components
+- `/growth` - Growth tracking interface
+- `/simulation` - Future simulation interface
+- `/personality` - Personality engine interface
+- `/data` - Data ingestion interface
+- `/journal` - Journal interface
+- `/chat` - Chat with your digital twin
+
+## Technologies
+
+- **Frontend**: Next.js, React, ChakraUI, Framer Motion
+- **Backend**: FastAPI, Python
+- **State Management**: React Context API
+- **Animations**: Framer Motion
+
+## Troubleshooting
+
+### If you get errors related to React or Chakra UI:
+
+1. Make sure you have the latest dependencies installed
    ```
-   pip install -r requirements.txt
+   npm install
    ```
 
-2. Configure API keys in `.env` file
+2. If you see a "useTabsContext" error, ensure you've wrapped TabPanels with Tabs component
 
-3. Run the application:
+3. For Windows PowerShell execution issues, try using the batch file instead:
    ```
-   python app.py
+   .\startup.bat
    ```
 
-## Tech Stack
-- Python (FastAPI backend)
-- React/Next.js (frontend)
-- Firebase (database)
-- Machine Learning (scikit-learn, TensorFlow)
-- Natural Language Processing (OpenAI API, HuggingFace) 
+## License
+
+MIT 

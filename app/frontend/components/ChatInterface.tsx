@@ -25,7 +25,15 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  MenuDivider
+  MenuDivider,
+  useToast,
+  Drawer,
+  DrawerBody,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  Heading
 } from '@chakra-ui/react';
 import { 
   FaPaperPlane, 
@@ -40,15 +48,23 @@ import {
   FaHistory,
   FaInfoCircle,
   FaSearch,
-  FaUserAlt
+  FaUserAlt,
+  FaChartLine,
+  FaClock,
+  FaBrain,
+  FaDatabase,
+  FaCheck,
+  FaCheckDouble,
+  FaMicrophoneSlash
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import AvatarDisplay from './AvatarDisplay';
+import VoiceInterface from './VoiceInterface';
 
 // Motion components
-const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
-const MotionText = motion(Text);
+const MotionBox = motion.div;
+const MotionFlex = motion.div;
+const MotionText = motion.p;
 
 interface Message {
   id: string;
@@ -57,16 +73,28 @@ interface Message {
   timestamp: Date;
   status?: 'sending' | 'sent' | 'delivered' | 'read';
   isThinking?: boolean;
+  actions?: MessageAction[];
+}
+
+interface MessageAction {
+  label: string;
+  icon: React.ComponentType;
+  action: () => void;
+  type: 'primary' | 'secondary';
 }
 
 interface ChatInterfaceProps {
   userName?: string;
   userAvatar?: string;
+  onClose?: () => void;
+  onNavigateTab?: (tabIndex: number) => void;
 }
 
 export default function ChatInterface({ 
   userName = 'You',
-  userAvatar
+  userAvatar,
+  onClose,
+  onNavigateTab
 }: ChatInterfaceProps) {
   const { colorMode } = useColorMode();
   const [messages, setMessages] = useState<Message[]>([
@@ -84,14 +112,17 @@ export default function ChatInterface({
   const inputRef = useRef<HTMLInputElement>(null);
   const [twinMood, setTwinMood] = useState<string>('neutral');
   const [isRecording, setIsRecording] = useState<boolean>(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onOpen, onClose: onPopoverClose } = useDisclosure();
+  const toast = useToast();
+  const [voiceMode, setVoiceMode] = useState(false);
   
   // Sample suggestion prompts
   const suggestionPrompts = [
     "How will I handle stress next week?",
     "What habit should I develop?",
     "Predict my reaction to this situation...",
-    "Help me plan my next month"
+    "Help me plan my next month",
+    "Show me my mood patterns"
   ];
 
   // Scroll to bottom whenever messages change
@@ -172,6 +203,7 @@ export default function ChatInterface({
   const generateTwinResponse = (userMessage: string) => {
     // In a real app, this would call an API to get response from a model
     let response: string;
+    let actions: MessageAction[] = [];
     const lowerCaseMessage = userMessage.toLowerCase();
     
     // Simple pattern matching for demo purposes
@@ -179,14 +211,88 @@ export default function ChatInterface({
       response = `Hello ${userName}! How's your day going?`;
     } else if (lowerCaseMessage.includes('how are you')) {
       response = "As your digital twin, I reflect your current state. Based on your recent data, you seem to be doing fairly well, though your sleep patterns suggest you might be a bit tired.";
+      actions = [
+        {
+          label: 'View Sleep Data',
+          icon: FaChartLine,
+          action: () => navigateToTab(0), // Growth Tracker tab
+          type: 'primary'
+        }
+      ];
     } else if (lowerCaseMessage.includes('future') || lowerCaseMessage.includes('predict')) {
       response = "Based on your past behaviors and current trajectory, I predict you'll likely focus more on your personal projects in the coming weeks. Would you like me to suggest an optimal path toward your goals?";
+      actions = [
+        {
+          label: 'Run Simulation',
+          icon: FaClock,
+          action: () => navigateToTab(1), // Simulation tab
+          type: 'primary'
+        }
+      ];
     } else if (lowerCaseMessage.includes('goal') || lowerCaseMessage.includes('achievement')) {
       response = "I notice you've been working toward improving your health habits. At your current pace, you'll reach your initial fitness goal in approximately 3 weeks. Would you like me to suggest adjustments to optimize your progress?";
+      actions = [
+        {
+          label: 'View Progress',
+          icon: FaChartLine,
+          action: () => navigateToTab(0), // Growth Tracker tab
+          type: 'primary'
+        },
+        {
+          label: 'Optimize Plan',
+          icon: FaBrain,
+          action: () => navigateToTab(2), // Personality Engine tab
+          type: 'secondary'
+        }
+      ];
+    } else if (lowerCaseMessage.includes('journal') || lowerCaseMessage.includes('write') || lowerCaseMessage.includes('diary')) {
+      response = "I've created a new journal entry for you. Would you like to open it and start writing?";
+      actions = [
+        {
+          label: 'Open Journal',
+          icon: FaDatabase,
+          action: () => {
+            toast({
+              title: "Journal Feature Coming Soon",
+              description: "We're working on implementing the journaling feature. Stay tuned!",
+              status: "info",
+              duration: 3000,
+              isClosable: true,
+            });
+          },
+          type: 'primary'
+        }
+      ];
     } else if (lowerCaseMessage.includes('stressed') || lowerCaseMessage.includes('stress') || lowerCaseMessage.includes('anxious')) {
       response = "I've noticed patterns in your data that suggest you typically handle stress through creative outlets. Based on your calendar, you might benefit from scheduling some creative time this weekend. Your past data shows this significantly reduces your stress levels.";
+      actions = [
+        {
+          label: 'View Stress Patterns',
+          icon: FaChartLine,
+          action: () => navigateToTab(0), // Growth Tracker tab
+          type: 'primary'
+        }
+      ];
+    } else if (lowerCaseMessage.includes('connect') || lowerCaseMessage.includes('data') || lowerCaseMessage.includes('github') || lowerCaseMessage.includes('calendar')) {
+      response = "I can help you connect various data sources to enhance your digital twin. This will help me provide more accurate insights and predictions.";
+      actions = [
+        {
+          label: 'Connect Data Sources',
+          icon: FaDatabase,
+          action: () => navigateToTab(3), // Data Ingestion tab
+          type: 'primary'
+        }
+      ];
     } else {
       response = "Based on my analysis of your patterns, I think you might be interested in exploring this further. Would you like me to simulate a few potential outcomes based on different approaches you could take?";
+      actions = [
+        {
+          label: 'Run Simulation',
+          icon: FaClock,
+          action: () => navigateToTab(1), // Simulation tab
+          type: 'primary'
+        }
+      ];
     }
     
     // Add the twin's response to messages
@@ -196,7 +302,8 @@ export default function ChatInterface({
         id: Date.now().toString(), 
         text: response, 
         sender: 'twin', 
-        timestamp: new Date() 
+        timestamp: new Date(),
+        actions: actions
       }
     ]);
     
@@ -204,6 +311,24 @@ export default function ChatInterface({
     setTimeout(() => {
       setTwinMood('neutral');
     }, 5000);
+  };
+
+  const navigateToTab = (tabIndex: number) => {
+    if (onNavigateTab) {
+      onNavigateTab(tabIndex);
+    }
+    
+    if (onClose) {
+      onClose();
+    }
+    
+    toast({
+      title: "Navigating to Dashboard",
+      description: "Opening the selected feature for you.",
+      status: "success",
+      duration: 2000,
+      isClosable: true,
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -247,366 +372,375 @@ export default function ChatInterface({
   // Thinking dots animation variants
   const dotVariants = {
     initial: { y: 0 },
-    animate: { 
-      y: [0, -10, 0],
-      transition: { 
-        repeat: Infinity, 
-        duration: 0.8, 
-        ease: "easeInOut",
-        repeatType: "loop" 
-      }
+    animate: { y: [0, -5, 0] }
+  };
+
+  const isDark = colorMode === 'dark';
+  const bgColor = isDark ? 'gray.800' : 'white';
+  const textColor = isDark ? 'white' : 'gray.800';
+  const userBubbleColor = isDark ? 'brand.500' : 'brand.400';
+  const twinBubbleColor = isDark ? 'gray.700' : 'gray.100';
+  
+  // Handle voice commands
+  const handleVoiceCommand = (command: string) => {
+    if (command === 'send') {
+      handleSendMessage();
+    } else {
+      // Add the voice command as a message
+      setInputMessage(command);
+    }
+  };
+  
+  // Handle voice input
+  const handleVoiceInput = (text: string) => {
+    setInputMessage(text);
+    // Auto-send if it appears to be a question
+    if (text.trim().endsWith('?')) {
+      setTimeout(() => {
+        handleSendMessage();
+      }, 500);
     }
   };
 
   return (
-    <Flex 
-      direction="column" 
-      h="100%" 
-      bg={colorMode === 'dark' ? 'dark.200' : 'white'}
-      position="relative"
-      overflow="hidden"
-    >
-      {/* Chat Header */}
-      <Flex 
-        align="center" 
-        p={4} 
-        bg={colorMode === 'dark' ? 'dark.100' : 'gray.50'}
-        borderBottomWidth="1px"
-        borderBottomColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
-        position="relative"
-        zIndex="3"
+    <Box>
+      <Flex
+        direction="column"
+        bg={bgColor}
+        borderRadius="lg"
+        borderWidth={1}
+        borderColor={isDark ? 'gray.700' : 'gray.200'}
+        overflow="hidden"
+        boxShadow="md"
+        height="600px"
       >
-        <Flex align="center" flex="1">
-          <MotionBox
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
-            mr={3}
-          >
-            <Box w="50px" h="50px">
-              <AvatarDisplay size="sm" mood={twinMood} interactive={false} />
-            </Box>
-          </MotionBox>
-          <Box>
-            <MotionText 
-              fontWeight="bold"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              Your Digital Twin
-            </MotionText>
-            <HStack spacing={1}>
-              <MotionBox
-                width="8px" 
-                height="8px" 
-                borderRadius="full" 
-                bg="green.400"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
+        {/* Chat Header */}
+        <Flex 
+          justify="space-between" 
+          align="center" 
+          p={4} 
+          borderBottomWidth={1}
+          borderBottomColor={isDark ? 'gray.700' : 'gray.200'}
+        >
+          <Heading size="md" display="flex" alignItems="center">
+            <Box as={FaRobot} mr={2} color={isDark ? 'brand.500' : 'brand.400'} />
+            Chat with Your Digital Twin
+          </Heading>
+          
+          <HStack spacing={2}>
+            <Tooltip label={voiceMode ? "Disable voice mode" : "Enable voice mode"}>
+              <IconButton
+                aria-label={voiceMode ? "Disable voice mode" : "Enable voice mode"}
+                icon={voiceMode ? <FaMicrophone /> : <FaMicrophoneSlash />}
+                size="sm"
+                colorScheme={voiceMode ? "green" : "gray"}
+                onClick={() => {
+                  setVoiceMode(!voiceMode);
+                  if (!voiceMode) {
+                    onOpen(); // Open the voice drawer when enabling voice mode
+                  }
+                }}
               />
-              <MotionText 
-                fontSize="xs" 
-                color={colorMode === 'dark' ? 'gray.400' : 'gray.500'}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.4 }}
-              >
-                Always syncing
-              </MotionText>
-            </HStack>
-          </Box>
+            </Tooltip>
+            <Tooltip label="View info">
+              <IconButton
+                aria-label="Info"
+                icon={<FaInfoCircle />}
+                variant="ghost"
+                size="sm"
+                onClick={onOpen}
+              />
+            </Tooltip>
+            {onClose && (
+              <Tooltip label="Close chat">
+                <IconButton
+                  aria-label="Close"
+                  icon={<Icon as={FaSearch} transform="rotate(45deg)" />}
+                  variant="ghost"
+                  size="sm"
+                  onClick={onClose}
+                />
+              </Tooltip>
+            )}
+          </HStack>
         </Flex>
         
-        <HStack spacing={2}>
-          <Tooltip label={voiceEnabled ? "Disable voice responses" : "Enable voice responses"}>
+        {/* Chat Messages */}
+        <Box 
+          flex={1} 
+          p={4} 
+          overflowY="auto" 
+          bgGradient={isDark 
+            ? "linear(to-b, gray.800, gray.900)" 
+            : "linear(to-b, white, gray.50)"
+          }
+          css={{
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              width: '10px',
+              background: 'transparent'
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+              borderRadius: '24px',
+            },
+          }}
+        >
+          <VStack spacing={6} align="stretch">
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <MotionBox
+                  key={message.id}
+                  variants={messageVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                  transition={{ type: "spring", damping: 25, stiffness: 500 }}
+                >
+                  {message.isThinking ? (
+                    // Thinking indicator
+                    <Flex justify="flex-start" mb={2}>
+                      <Box 
+                        px={4} 
+                        py={2} 
+                        borderRadius="lg" 
+                        maxW="80%" 
+                        bg={twinBubbleColor}
+                        display="flex"
+                        alignItems="center"
+                      >
+                        <MotionFlex>
+                          {[0, 1, 2].map((i) => (
+                            <MotionBox
+                              key={i}
+                              style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "full",
+                                background: isDark ? "gray.400" : "gray.500",
+                                marginLeft: "2px",
+                                marginRight: "2px"
+                              }}
+                              variants={dotVariants}
+                              animate="animate"
+                              transition={{
+                                repeat: Infinity,
+                                repeatType: "loop",
+                                duration: 0.6,
+                                delay: i * 0.1
+                              }}
+                            />
+                          ))}
+                        </MotionFlex>
+                      </Box>
+                    </Flex>
+                  ) : (
+                    // Regular message
+                    <Flex 
+                      justify={message.sender === 'user' ? 'flex-end' : 'flex-start'} 
+                      mb={2}
+                    >
+                      {message.sender === 'twin' && (
+                        <Box mr={2} alignSelf="flex-end" mb={1}>
+                          <AvatarDisplay size="sm" mood={twinMood} interactive={false} />
+                        </Box>
+                      )}
+                      <VStack spacing={1} align={message.sender === 'user' ? 'flex-end' : 'flex-start'} maxW="80%">
+                        <Box 
+                          px={4} 
+                          py={3} 
+                          borderRadius={message.sender === 'user' ? "2xl 2xl 0 2xl" : "2xl 2xl 2xl 0"} 
+                          bg={message.sender === 'user' ? 
+                            isDark ? 'brand.500' : 'brand.400' : 
+                            isDark ? 'gray.700' : 'gray.100'
+                          }
+                          color={message.sender === 'user' ? 'white' : textColor}
+                          boxShadow={`0 2px 8px ${message.sender === 'user' ? 
+                            isDark ? 'rgba(106, 38, 255, 0.3)' : 'rgba(106, 38, 255, 0.2)' : 
+                            isDark ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'
+                          }`}
+                          position="relative"
+                          _hover={{
+                            bg: message.sender === 'user' ? 
+                              isDark ? 'brand.600' : 'brand.500' : 
+                              isDark ? 'gray.800' : 'gray.200',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <Text fontSize="md" lineHeight="1.6">{message.text}</Text>
+                        </Box>
+                        
+                        {/* Message metadata */}
+                        <Flex 
+                          justify={message.sender === 'user' ? 'flex-end' : 'flex-start'} 
+                          align="center"
+                          px={2}
+                        >
+                          <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
+                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                          {message.sender === 'user' && message.status && (
+                            <Box ml={1}>
+                              {message.status === 'sending' && <Spinner size="xs" color="gray.400" />}
+                              {message.status === 'sent' && <Icon as={FaCheck} color="gray.400" fontSize="xs" />}
+                              {message.status === 'delivered' && (
+                                <Icon as={FaCheckDouble} color="gray.400" fontSize="xs" />
+                              )}
+                              {message.status === 'read' && (
+                                <Icon as={FaCheckDouble} color="blue.400" fontSize="xs" />
+                              )}
+                            </Box>
+                          )}
+                        </Flex>
+                        
+                        {/* Message actions */}
+                        {message.actions && message.actions.length > 0 && (
+                          <HStack spacing={2} mt={2}>
+                            {message.actions.map((action, index) => (
+                              <Button
+                                key={index}
+                                size="xs"
+                                leftIcon={<Icon as={action.icon} />}
+                                onClick={action.action}
+                                colorScheme={action.type === 'primary' ? 'brand' : 'gray'}
+                                variant={action.type === 'primary' ? 'solid' : 'outline'}
+                                borderRadius="full"
+                                boxShadow="sm"
+                                _hover={{
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 'md'
+                                }}
+                                transition="all 0.2s ease"
+                              >
+                                {action.label}
+                              </Button>
+                            ))}
+                          </HStack>
+                        )}
+                      </VStack>
+                      
+                      {message.sender === 'user' && (
+                        <Avatar 
+                          size="xs" 
+                          ml={2} 
+                          alignSelf="flex-end"
+                          mb={1} 
+                          src={userAvatar} 
+                          bg="gray.300"
+                          icon={<Icon as={FaUserAlt} fontSize="xs" />}
+                          boxShadow="sm"
+                        />
+                      )}
+                    </Flex>
+                  )}
+                </MotionBox>
+              ))}
+            </AnimatePresence>
+          </VStack>
+          <div ref={messagesEndRef} />
+        </Box>
+        
+        {/* Suggested prompts */}
+        <Box 
+          px={4} 
+          py={2} 
+          bg={isDark ? 'gray.700' : 'gray.50'} 
+          borderTop="1px solid" 
+          borderColor={isDark ? 'gray.600' : 'gray.200'}
+          overflowX="auto"
+          css={{
+            scrollbarWidth: 'none',
+            '&::-webkit-scrollbar': {
+              display: 'none'
+            }
+          }}
+        >
+          <Flex gap={2} wrap="nowrap">
+            {suggestionPrompts.map((prompt, index) => (
+              <Button 
+                key={index}
+                size="xs"
+                variant="outline"
+                colorScheme="gray"
+                whiteSpace="nowrap"
+                flexShrink={0}
+                onClick={() => handleSuggestionClick(prompt)}
+                _hover={{ bg: isDark ? 'gray.600' : 'gray.100' }}
+              >
+                {prompt}
+              </Button>
+            ))}
+          </Flex>
+        </Box>
+        
+        {/* Input Area */}
+        <Flex p={4} borderTopWidth={1} borderTopColor={isDark ? 'gray.700' : 'gray.200'}>
+          <Input
+            placeholder="Type your message..."
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleSendMessage();
+              }
+            }}
+            mr={2}
+          />
+          <Button 
+            colorScheme="blue"
+            isLoading={isRecording}
+            onClick={handleSendMessage}
+          >
+            Send
+          </Button>
+          
+          {/* Voice input button */}
+          <Tooltip label={voiceMode ? "Voice mode enabled" : "Enable voice input"}>
             <IconButton
-              aria-label="Toggle voice"
-              icon={<Icon as={voiceEnabled ? FaVolumeUp : FaVolumeMute} />}
-              variant="ghost"
+              aria-label="Voice input"
+              icon={voiceMode ? <FaMicrophone /> : <FaMicrophoneSlash />}
+              colorScheme={voiceMode ? "green" : "gray"}
+              ml={2}
               size="sm"
-              onClick={toggleVoiceOutput}
+              onClick={() => {
+                setVoiceMode(!voiceMode);
+                if (!voiceMode) {
+                  onOpen(); // Open the voice drawer when enabling voice mode
+                }
+              }}
             />
           </Tooltip>
-          
-          <Menu>
-            <MenuButton
-              as={IconButton}
-              aria-label="Options"
-              icon={<Icon as={FaEllipsisH} />}
-              variant="ghost"
-              size="sm"
-            />
-            <MenuList bg={colorMode === 'dark' ? 'dark.100' : 'white'}>
-              <MenuItem icon={<Icon as={FaHistory} />}>View conversation history</MenuItem>
-              <MenuItem icon={<Icon as={FaSearch} />}>Search conversations</MenuItem>
-              <MenuDivider />
-              <MenuItem icon={<Icon as={FaInfoCircle} />}>About your digital twin</MenuItem>
-              <MenuItem icon={<Icon as={FaUserAlt} />}>Settings</MenuItem>
-            </MenuList>
-          </Menu>
-        </HStack>
+        </Flex>
       </Flex>
       
-      {/* Messages Area */}
-      <MotionBox 
-        flex="1" 
-        overflowY="auto" 
-        p={4} 
-        css={{
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            width: '10px',
-            background: colorMode === 'dark' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            background: colorMode === 'dark' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
-            borderRadius: '24px',
-          },
+      {/* Voice Interface Drawer */}
+      <Drawer
+        isOpen={isOpen}
+        placement="right"
+        onClose={() => {
+          onClose();
+          if (voiceMode) {
+            setVoiceMode(false);
+          }
         }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+        size="md"
       >
-        <VStack spacing={4} align="stretch">
-          <AnimatePresence>
-            {messages.map((message) => (
-              <MotionFlex
-                key={message.id}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-                variants={messageVariants}
-                transition={{ type: "spring", duration: 0.5 }}
-                mb={2}
-                justify={message.sender === 'user' ? 'flex-end' : 'flex-start'}
-              >
-                {message.isThinking ? (
-                  // Thinking indicator
-                  <MotionFlex
-                    p={3}
-                    borderRadius="lg"
-                    bg={colorMode === 'dark' ? 'dark.100' : 'gray.100'}
-                    align="center"
-                    maxW="80%"
-                  >
-                    <Box position="relative" height="30px" width="60px">
-                      {[0, 1, 2].map((i) => (
-                        <MotionBox
-                          key={i}
-                          position="absolute"
-                          left={`${i * 20 + 10}px`}
-                          bottom="10px"
-                          width="10px"
-                          height="10px"
-                          borderRadius="full"
-                          bg={colorMode === 'dark' ? 'gray.400' : 'gray.500'}
-                          variants={dotVariants}
-                          initial="initial"
-                          animate="animate"
-                          custom={i * 0.2}
-                          style={{ originY: 0.7 }}
-                        />
-                      ))}
-                    </Box>
-                  </MotionFlex>
-                ) : (
-                  // Normal message
-                  <MotionFlex
-                    direction="column"
-                    p={3}
-                    borderRadius="lg"
-                    bg={message.sender === 'user' 
-                      ? colorMode === 'dark' ? 'brand.600' : 'brand.500'
-                      : colorMode === 'dark' ? 'dark.100' : 'gray.100'
-                    }
-                    color={message.sender === 'user' ? 'white' : 'inherit'}
-                    maxW="80%"
-                    boxShadow="sm"
-                    position="relative"
-                    _after={message.sender === 'user' ? {
-                      content: '""',
-                      position: 'absolute',
-                      right: '-8px',
-                      bottom: '15px',
-                      borderWidth: '8px',
-                      borderStyle: 'solid',
-                      borderColor: `transparent transparent transparent ${colorMode === 'dark' ? 'var(--chakra-colors-brand-600)' : 'var(--chakra-colors-brand-500)'}`
-                    } : {
-                      content: '""',
-                      position: 'absolute',
-                      left: '-8px',
-                      bottom: '15px',
-                      borderWidth: '8px',
-                      borderStyle: 'solid',
-                      borderColor: `transparent ${colorMode === 'dark' ? 'var(--chakra-colors-dark-100)' : 'var(--chakra-colors-gray-100)'} transparent transparent`
-                    }}
-                  >
-                    <Text>{message.text}</Text>
-                    <Text 
-                      fontSize="xs" 
-                      opacity={0.7} 
-                      alignSelf={message.sender === 'user' ? 'flex-end' : 'flex-start'}
-                      mt={1}
-                    >
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      {message.sender === 'user' && message.status && (
-                        <Text as="span" ml={1} fontSize="2xs">
-                          {message.status === 'sending' ? 'sending...' : 
-                           message.status === 'sent' ? 'sent' : 
-                           message.status === 'delivered' ? 'delivered' :
-                           'read'}
-                        </Text>
-                      )}
-                    </Text>
-                  </MotionFlex>
-                )}
-              </MotionFlex>
-            ))}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
-        </VStack>
-      </MotionBox>
-      
-      {/* Suggested Prompts */}
-      <Flex 
-        px={4} 
-        py={2} 
-        overflowX="auto" 
-        borderTopWidth="1px"
-        borderTopColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
-        css={{
-          '&::-webkit-scrollbar': {
-            display: 'none'
-          },
-          'scrollbarWidth': 'none'
-        }}
-      >
-        <AnimatePresence>
-          <HStack spacing={2}>
-            {suggestionPrompts.map((prompt, index) => (
-              <MotionBox
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  borderRadius="full" 
-                  onClick={() => handleSuggestionClick(prompt)}
-                  borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.300'}
-                  _hover={{
-                    bg: colorMode === 'dark' ? 'dark.100' : 'gray.50',
-                    borderColor: 'brand.400'
-                  }}
-                >
-                  {prompt}
-                </Button>
-              </MotionBox>
-            ))}
-          </HStack>
-        </AnimatePresence>
-      </Flex>
-      
-      {/* Input Area */}
-      <Flex 
-        p={4} 
-        borderTopWidth="1px"
-        borderTopColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
-        bg={colorMode === 'dark' ? 'dark.100' : 'gray.50'}
-        position="relative"
-        zIndex="3"
-      >
-        <MotionBox
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          flex="1"
-          position="relative"
-        >
-          <Input
-            placeholder="Type a message..."
-            value={inputMessage}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            borderRadius="full"
-            bg={colorMode === 'dark' ? 'dark.200' : 'white'}
-            px={4}
-            pr={12}
-            h="50px"
-            border="1px solid"
-            borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.300'}
-            _focus={{
-              borderColor: 'brand.500',
-              boxShadow: colorMode === 'dark' ? '0 0 0 1px var(--chakra-colors-brand-500)' : '0 0 0 1px var(--chakra-colors-brand-500)'
-            }}
-            ref={inputRef}
-          />
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Voice Commands</DrawerHeader>
           
-          <HStack position="absolute" right="4" top="50%" transform="translateY(-50%)" spacing={2}>
-            <Tooltip label="Add emoji">
-              <IconButton
-                aria-label="Add emoji"
-                icon={<Icon as={FaSmile} />}
-                variant="ghost"
-                size="sm"
-                color={colorMode === 'dark' ? 'gray.400' : 'gray.500'}
-                _hover={{ color: 'brand.500' }}
-              />
-            </Tooltip>
-            
-            <Tooltip label="Attach file">
-              <IconButton
-                aria-label="Attach file"
-                icon={<Icon as={FaPaperclip} />}
-                variant="ghost"
-                size="sm"
-                color={colorMode === 'dark' ? 'gray.400' : 'gray.500'}
-                _hover={{ color: 'brand.500' }}
-              />
-            </Tooltip>
-          </HStack>
-        </MotionBox>
-        
-        <MotionBox
-          ml={3}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.3, type: "spring" }}
-        >
-          {inputMessage.trim() ? (
-            <IconButton
-              colorScheme="brand"
-              aria-label="Send message"
-              icon={<Icon as={FaPaperPlane} />}
-              onClick={handleSendMessage}
-              borderRadius="full"
-              size="lg"
-              bg="brand.500"
-              _hover={{ bg: 'brand.600' }}
-              _active={{ bg: 'brand.700' }}
+          <DrawerBody>
+            <VoiceInterface 
+              onVoiceCommand={handleVoiceCommand}
+              onVoiceInput={handleVoiceInput}
+              showTutorial={true}
             />
-          ) : (
-            <IconButton
-              aria-label="Voice message"
-              icon={isRecording ? <Spinner size="sm" /> : <Icon as={FaMicrophone} />}
-              onClick={startVoiceInput}
-              borderRadius="full"
-              size="lg"
-              bg={colorMode === 'dark' ? 'brand.600' : 'brand.500'}
-              color="white"
-              _hover={{ bg: 'brand.600' }}
-              _active={{ bg: 'brand.700' }}
-            />
-          )}
-        </MotionBox>
-      </Flex>
-    </Flex>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+    </Box>
   );
 } 
