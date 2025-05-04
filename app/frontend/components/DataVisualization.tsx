@@ -36,9 +36,9 @@ import {
 } from 'react-icons/fa';
 import * as d3 from 'd3';
 
-// Motion components
-const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
+// Motion components - Use motion.div instead of motion(Box)
+const MotionBox = motion.div;
+const MotionFlex = motion.div;
 
 // Sample data for visualization - in real app, this would come from an API
 interface DataPoint {
